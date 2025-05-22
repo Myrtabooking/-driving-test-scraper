@@ -1,0 +1,42 @@
+name: Scrape and publish driving test times
+
+on:
+  schedule:
+    - cron:  '0 3,15 * * *'      # 03:00 and 15:00 UTC each day
+  workflow_dispatch:              # manual button
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    env:
+      PAT: ${{ secrets.PAT }}     # passes your token to the script
+
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 1}
+
+      - name: Install Chromium & chromedriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Install Python libs
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium requests
+
+      - name: Run scraper
+        run: python scripts/scraper.py
+
+      - name: Commit & push updated data.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ `git status --porcelain docs/data.json` ]]; then
+            git add docs/data.json
+            git commit -m "Auto-update data.json (`date -u '+%Y-%m-%d %H:%M:%S'`)"
+            git push
+          else
+            echo "No changes to commit"
+          fi
