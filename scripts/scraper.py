@@ -13,11 +13,13 @@ import base64
 from selenium.webdriver.chrome.service import Service
 import os
 
-# Set up logging
 logging.basicConfig(
-    filename='driving_test_scraper.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO,                          # log to console
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('driving_test_scraper.log'),
+        logging.StreamHandler()                  # <-- Console output
+    ]
 )
 
 # GitHub configuration
@@ -243,7 +245,7 @@ def main_job():
         logging.info("Starting scraping job")
         data = scrape_test_times()
         
-        if data:
+        if data and any(data.values()):
             # Save locally
             with open('data.json', 'w') as f:
                 json.dump(data, f, indent=4)
